@@ -7,6 +7,11 @@ Full-stack venue management system for booking team offsite locations.
 **Backend:** NestJS, TypeScript, Prisma, PostgreSQL, Docker  
 **Frontend:** Next.js 14, TypeScript, React, TailwindCSS
 
+**Development Tools:**
+- **Linting:** ESLint with TypeScript support for code quality and consistency
+- **Logging:** Custom structured logger with timestamp, log level, and context tracking
+- **Testing:** Jest unit tests for service layer with mocked dependencies, covering business logic and edge cases
+
 ## Setup Instructions
 
 ### Prerequisites
@@ -40,6 +45,21 @@ docker-compose up
 - Frontend: `http://localhost:3001`
 - API Docs: `http://localhost:3002/api` (Swagger)
 
+## Testing
+
+Run unit tests:
+```bash
+cd backend
+npm test              # Run all tests
+npm run test:watch    # Run tests in watch mode
+npm run test:cov      # Run tests with coverage report
+```
+
+Unit tests cover:
+- Venue service filtering and pagination logic
+- Booking inquiry creation with validation and conflict detection
+- Edge cases (capacity limits, overlapping dates, missing venues)
+
 ## Deployment
 
 **Frontend (Vercel):** ✅ Yes - Next.js is optimized for Vercel deployment  
@@ -58,7 +78,9 @@ See `DEPLOYMENT.md` for detailed deployment instructions.
 **Key Design Decisions:**
 - **Prisma over TypeORM:** Better TypeScript integration and developer experience
 - **Class-validator:** Declarative validation with decorators
-- **Custom logger:** Simple structured logging sufficient for scope
+- **Custom logger:** Structured logging with timestamps, log levels (INFO, ERROR, WARN, DEBUG), and context tracking for better debugging and monitoring
+- **ESLint & Prettier:** Code quality and formatting standards enforced through linting and auto-formatting
+- **Jest unit tests:** Service layer testing with mocked dependencies to ensure business logic correctness and catch regressions
 - **Optimistic locking:** Prevents double bookings using version field and transaction-based conflict detection
 - **No authentication:** Simplified scope for demo, would add JWT/OAuth in production
 - **Pagination:** Implemented offset-based pagination with page/limit parameters
