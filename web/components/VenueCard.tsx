@@ -3,13 +3,13 @@ import { Venue } from '@/lib/api';
 
 export default function VenueCard({ venue }: { venue: Venue }) {
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition">
-      <div className="p-6">
+    <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition h-full flex flex-col">
+      <div className="p-6 flex flex-col flex-grow">
         <h3 className="text-xl font-semibold text-gray-900 mb-2">{venue.name}</h3>
         <p className="text-gray-600 mb-1">
           📍 {venue.city}, {venue.country}
         </p>
-        <p className="text-gray-700 mb-3">{venue.description}</p>
+        <p className="text-gray-700 mb-3 line-clamp-2">{venue.description}</p>
         
         <div className="flex items-center justify-between mb-3">
           <div className="text-sm text-gray-600">
@@ -20,7 +20,7 @@ export default function VenueCard({ venue }: { venue: Venue }) {
           </div>
         </div>
 
-        <div className="mb-4">
+        <div className="mb-4 flex-grow">
           <p className="text-sm font-medium text-gray-700 mb-2">Amenities:</p>
           <div className="flex flex-wrap gap-2">
             {venue.amenities.map((amenity) => (
@@ -36,7 +36,7 @@ export default function VenueCard({ venue }: { venue: Venue }) {
 
         <Link
           href={`/venues/${venue.id}`}
-          className="block w-full text-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
+          className="block w-full text-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition mt-auto"
         >
           Book This Venue
         </Link>

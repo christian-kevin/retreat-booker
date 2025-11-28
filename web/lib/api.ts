@@ -1,4 +1,4 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002';
 
 export interface Venue {
   id: string;
@@ -40,7 +40,9 @@ export async function getVenues(filters?: VenueFilters): Promise<Venue[]> {
     throw new Error('Failed to fetch venues');
   }
   
-  return response.json();
+  const result = await response.json();
+  // Backend returns { data: Venue[], meta: {...} }
+  return result.data || result;
 }
 
 export async function createBookingInquiry(inquiry: BookingInquiry) {

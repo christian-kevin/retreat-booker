@@ -20,7 +20,7 @@ services:
     environment:
       - DATABASE_URL=postgresql://retreat:retreat123@postgres:5432/retreat_db?schema=public
     ports:
-      - '3000:3000'
+      - '3002:3000'
     depends_on:
       - postgres
     command: npm run start:dev
@@ -32,7 +32,7 @@ services:
       - /app/node_modules
       - /app/.next
     environment:
-      - NEXT_PUBLIC_API_URL=http://localhost:3000
+      - NEXT_PUBLIC_API_URL=http://localhost:3002
     ports:
       - '3001:3001'
     depends_on:
