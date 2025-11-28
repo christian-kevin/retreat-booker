@@ -1,16 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma, Venue } from '@prisma/client';
 import { PrismaService } from '@/shared/prisma/prisma.service';
 
 @Injectable()
 export class VenuesRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findMany(
-    where: Prisma.VenueWhereInput,
-    skip: number,
-    take: number,
-  ): Promise<Venue[]> {
+  findMany(where: Record<string, any>, skip: number, take: number) {
     return this.prisma.venue.findMany({
       where,
       skip,
@@ -19,7 +14,7 @@ export class VenuesRepository {
     });
   }
 
-  async count(where: Prisma.VenueWhereInput): Promise<number> {
+  count(where: Record<string, any>) {
     return this.prisma.venue.count({ where });
   }
 }

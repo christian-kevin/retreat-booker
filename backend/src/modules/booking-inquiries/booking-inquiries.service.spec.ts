@@ -146,3 +146,5 @@ describe('BookingInquiriesService', () => {
 
       expect(result.id).toEqual('inquiry-2');
     });
+  });
+});

@@ -1,10 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { Venue } from '@prisma/client';
 import { VenuesService } from './venues.service';
 import { VenuesRepository } from './venues.repository';
 import { LoggerService } from '@/shared/logger/logger.service';
 
-const createVenue = (overrides: Partial<Venue> = {}): Venue => ({
+const createVenue = (overrides: Record<string, any> = {}) => ({
   id: 'venue-1',
   name: 'Test Venue',
   city: 'Denver',

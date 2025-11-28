@@ -1,15 +1,14 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma, BookingInquiry, Venue } from '@prisma/client';
 import { PrismaService } from '@/shared/prisma/prisma.service';
 
 export class BookingInquiriesRepositoryTx {
-  constructor(private readonly tx: Prisma.TransactionClient) {}
+  constructor(private readonly tx: any) {}
 
   findOverlappingBooking(
     venueId: string,
     startDate: Date,
     endDate: Date,
-  ): Promise<BookingInquiry | null> {
+  ) {
     return this.tx.bookingInquiry.findFirst({
       where: {
         venueId,
@@ -19,7 +18,7 @@ export class BookingInquiriesRepositoryTx {
     });
   }
 
-  createBookingInquiry(data: Prisma.BookingInquiryUncheckedCreateInput) {
+  createBookingInquiry(data: any) {
     return this.tx.bookingInquiry.create({ data });
   }
 }
@@ -28,7 +27,7 @@ export class BookingInquiriesRepositoryTx {
 export class BookingInquiriesRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  findVenueById(venueId: string): Promise<Venue | null> {
+  findVenueById(venueId: string) {
     return this.prisma.venue.findUnique({ where: { id: venueId } });
   }
 
