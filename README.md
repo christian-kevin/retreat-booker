@@ -25,7 +25,7 @@ Full-stack venue management system for booking team offsite locations.
 # Backend
 cd backend
 npm install
-docker-compose up -d postgres
+docker compose up -d postgres
 echo 'DATABASE_URL="postgresql://retreat:retreat123@localhost:5432/retreat_db?schema=public"' > .env
 npx prisma migrate dev --name init
 npx prisma db seed
@@ -39,7 +39,8 @@ npm run dev
 
 **Or use Docker:**
 ```bash
-docker-compose up
+docker compose build --no-cache
+docker compose up -d
 ```
 
 - Backend: `http://localhost:3002`

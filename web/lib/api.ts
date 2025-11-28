@@ -34,15 +34,31 @@ export async function getVenues(filters?: VenueFilters): Promise<Venue[]> {
   if (filters?.maxPrice) params.append('maxPrice', filters.maxPrice.toString());
 
   const url = `${API_URL}/venues${params.toString() ? `?${params.toString()}` : ''}`;
-  const response = await fetch(url, { cache: 'no-store' });
   
-  if (!response.ok) {
-    throw new Error('Failed to fetch venues');
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+    
+    const response = await fetch(url, { 
+      cache: 'no-store',
+      signal: controller.signal,
+    });
+    
+    clearTimeout(timeoutId);
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch venues: ${response.status} ${response.statusText}`);
+    }
+    
+    const result = await response.json();
+    // Backend returns { data: Venue[], meta: {...} }
+    return result.data || result;
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error('Request timeout: Backend may not be ready yet');
+    }
+    throw error;
   }
-  
-  const result = await response.json();
-  // Backend returns { data: Venue[], meta: {...} }
-  return result.data || result;
 }
 
 export async function createBookingInquiry(inquiry: BookingInquiry) {
@@ -63,13 +79,28 @@ export async function createBookingInquiry(inquiry: BookingInquiry) {
 }
 
 export async function getVenueCities(): Promise<string[]> {
-  const response = await fetch(`${API_URL}/venues/cities`, { cache: 'no-store' });
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+    
+    const response = await fetch(`${API_URL}/venues/cities`, { 
+      cache: 'no-store',
+      signal: controller.signal,
+    });
+    
+    clearTimeout(timeoutId);
 
-  if (!response.ok) {
-    throw new Error('Failed to fetch cities');
+    if (!response.ok) {
+      throw new Error(`Failed to fetch cities: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return Array.isArray(data) ? data : [];
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error('Request timeout: Backend may not be ready yet');
+    }
+    throw error;
   }
-
-  const data = await response.json();
-  return Array.isArray(data) ? data : [];
 }
 

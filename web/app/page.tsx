@@ -19,7 +19,9 @@ export default function Home() {
         const data = await getVenues(filters);
         setVenues(data);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load venues');
+        const errorMessage = err instanceof Error ? err.message : 'Failed to load venues';
+        console.error('Error fetching venues:', err);
+        setError(errorMessage);
       } finally {
         setLoading(false);
       }
