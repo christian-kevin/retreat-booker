@@ -36,9 +36,9 @@ npm run dev
 docker-compose up
 ```
 
-- Backend: `http://localhost:3000`
+- Backend: `http://localhost:3002`
 - Frontend: `http://localhost:3001`
-- API Docs: `http://localhost:3000/api` (Swagger)
+- API Docs: `http://localhost:3002/api` (Swagger)
 
 ## Deployment
 
