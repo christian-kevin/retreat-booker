@@ -1,0 +1,43 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Venue {
+  id              String            @id @default(uuid())
+  name            String
+  city            String
+  country         String
+  address         String
+  capacity        Int
+  pricePerNight   Int
+  description     String
+  amenities       String[]
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  bookingInquiries BookingInquiry[]
+
+  @@index([city])
+  @@index([capacity])
+  @@index([pricePerNight])
+}
+
+model BookingInquiry {
+  id            String   @id @default(uuid())
+  venueId       String
+  venue         Venue    @relation(fields: [venueId], references: [id])
+  companyName   String
+  email         String
+  startDate     DateTime
+  endDate       DateTime
+  attendeeCount Int
+  createdAt     DateTime @default(now())
+
+  @@index([venueId])
+  @@index([email])
+}
+
