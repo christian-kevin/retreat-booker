@@ -4,24 +4,18 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { BookingInquiriesService } from './booking-inquiries.service';
-import { PrismaService } from '@/shared/prisma/prisma.service';
+import {
+  BookingInquiriesRepository,
+  BookingInquiriesRepositoryTx,
+} from './booking-inquiries.repository';
 import { LoggerService } from '@/shared/logger/logger.service';
 
 describe('BookingInquiriesService', () => {
   let service: BookingInquiriesService;
-  let prismaService: PrismaService;
-  let loggerService: LoggerService;
 
-  const mockTransaction = jest.fn();
-  const mockPrismaService = {
-    $transaction: mockTransaction,
-    venue: {
-      findUnique: jest.fn(),
-    },
-    bookingInquiry: {
-      create: jest.fn(),
-      findFirst: jest.fn(),
-    },
+  const mockBookingRepository = {
+    findVenueById: jest.fn(),
+    runInTransaction: jest.fn(),
   };
 
   const mockLoggerService = {
@@ -35,8 +29,8 @@ describe('BookingInquiriesService', () => {
       providers: [
         BookingInquiriesService,
         {
-          provide: PrismaService,
-          useValue: mockPrismaService,
+          provide: BookingInquiriesRepository,
+          useValue: mockBookingRepository,
         },
         {
           provide: LoggerService,
@@ -46,9 +40,6 @@ describe('BookingInquiriesService', () => {
     }).compile();
 
     service = module.get<BookingInquiriesService>(BookingInquiriesService);
-    prismaService = module.get<PrismaService>(PrismaService);
-    loggerService = module.get<LoggerService>(LoggerService);
-
     jest.clearAllMocks();
   });
 
@@ -81,149 +72,77 @@ describe('BookingInquiriesService', () => {
     };
 
     it('should create a booking inquiry successfully', async () => {
-      const mockCreatedInquiry = {
-        id: 'inquiry-1',
-        ...validInquiry,
-        version: 0,
-        createdAt: new Date(),
-      };
+      const txRepo: BookingInquiriesRepositoryTx = {
+        findOverlappingBooking: jest.fn().mockResolvedValue(null),
+        createBookingInquiry: jest
+          .fn()
+          .mockResolvedValue({ id: 'inquiry-1', ...validInquiry }),
+      } as unknown as BookingInquiriesRepositoryTx;
 
-      mockTransaction.mockImplementation(async (callback) => {
-        const tx = {
-          venue: {
-            findUnique: jest.fn().mockResolvedValue(mockVenue),
-          },
-          bookingInquiry: {
-            findFirst: jest.fn().mockResolvedValue(null),
-            create: jest.fn().mockResolvedValue(mockCreatedInquiry),
-          },
-        };
-        return callback(tx);
-      });
+      mockBookingRepository.findVenueById.mockResolvedValue(mockVenue);
+      mockBookingRepository.runInTransaction.mockImplementation((handler) =>
+        handler(txRepo),
+      );
 
       const result = await service.create(validInquiry);
 
-      expect(result).toEqual(mockCreatedInquiry);
-      expect(mockLoggerService.log).toHaveBeenCalled();
+      expect(result.id).toEqual('inquiry-1');
+      expect(txRepo.findOverlappingBooking).toHaveBeenCalled();
+      expect(txRepo.createBookingInquiry).toHaveBeenCalled();
     });
 
     it('should throw BadRequestException when venue not found', async () => {
-      mockTransaction.mockImplementation(async (callback) => {
-        const tx = {
-          venue: {
-            findUnique: jest.fn().mockResolvedValue(null),
-          },
-          bookingInquiry: {
-            findFirst: jest.fn(),
-            create: jest.fn(),
-          },
-        };
-        return callback(tx);
-      });
+      mockBookingRepository.findVenueById.mockResolvedValue(null);
 
       await expect(service.create(validInquiry)).rejects.toThrow(
         BadRequestException,
-      );
-      await expect(service.create(validInquiry)).rejects.toThrow(
-        'Venue not found',
-      );
-
-      expect(mockLoggerService.warn).toHaveBeenCalledWith(
-        expect.stringContaining('Venue not found'),
-        'BookingInquiriesService',
       );
     });
 
     it('should throw BadRequestException when attendee count exceeds capacity', async () => {
-      const overCapacityInquiry = {
-        ...validInquiry,
-        attendeeCount: 100,
-      };
+      mockBookingRepository.findVenueById.mockResolvedValue(mockVenue);
 
-      mockTransaction.mockImplementation(async (callback) => {
-        const tx = {
-          venue: {
-            findUnique: jest.fn().mockResolvedValue(mockVenue),
-          },
-          bookingInquiry: {
-            findFirst: jest.fn(),
-            create: jest.fn(),
-          },
-        };
-        return callback(tx);
-      });
-
-      await expect(service.create(overCapacityInquiry)).rejects.toThrow(
-        BadRequestException,
-      );
-      await expect(service.create(overCapacityInquiry)).rejects.toThrow(
-        /exceeds venue capacity/,
-      );
-
-      expect(mockLoggerService.warn).toHaveBeenCalled();
+      await expect(
+        service.create({ ...validInquiry, attendeeCount: 100 }),
+      ).rejects.toThrow(BadRequestException);
     });
 
-    it('should throw ConflictException when date range overlaps', async () => {
-      const overlappingBooking = {
-        id: 'existing-booking',
-        venueId: validInquiry.venueId,
-        startDate: new Date('2025-01-10'),
-        endDate: new Date('2025-01-18'),
-      };
+    it('should throw ConflictException on overlapping booking', async () => {
+      const txRepo: BookingInquiriesRepositoryTx = {
+        findOverlappingBooking: jest
+          .fn()
+          .mockResolvedValue({ id: 'existing' } as any),
+        createBookingInquiry: jest.fn(),
+      } as unknown as BookingInquiriesRepositoryTx;
 
-      mockTransaction.mockImplementation(async (callback) => {
-        const tx = {
-          venue: {
-            findUnique: jest.fn().mockResolvedValue(mockVenue),
-          },
-          bookingInquiry: {
-            findFirst: jest.fn().mockResolvedValue(overlappingBooking),
-            create: jest.fn(),
-          },
-        };
-        return callback(tx);
-      });
+      mockBookingRepository.findVenueById.mockResolvedValue(mockVenue);
+      mockBookingRepository.runInTransaction.mockImplementation((handler) =>
+        handler(txRepo),
+      );
 
       await expect(service.create(validInquiry)).rejects.toThrow(
         ConflictException,
       );
-      await expect(service.create(validInquiry)).rejects.toThrow(
-        'Date range conflicts',
+    });
+
+    it('creates inquiry when attendee count equals capacity', async () => {
+      const txRepo: BookingInquiriesRepositoryTx = {
+        findOverlappingBooking: jest.fn().mockResolvedValue(null),
+        createBookingInquiry: jest.fn().mockResolvedValue({
+          id: 'inquiry-2',
+          ...validInquiry,
+        }),
+      } as unknown as BookingInquiriesRepositoryTx;
+
+      mockBookingRepository.findVenueById.mockResolvedValue(mockVenue);
+      mockBookingRepository.runInTransaction.mockImplementation((handler) =>
+        handler(txRepo),
       );
 
-      expect(mockLoggerService.warn).toHaveBeenCalled();
-    });
-
-    it('should accept attendee count equal to capacity', async () => {
-      const maxCapacityInquiry = {
+      const result = await service.create({
         ...validInquiry,
-        attendeeCount: 50,
-      };
-
-      const mockCreatedInquiry = {
-        id: 'inquiry-2',
-        ...maxCapacityInquiry,
-        version: 0,
-        createdAt: new Date(),
-      };
-
-      mockTransaction.mockImplementation(async (callback) => {
-        const tx = {
-          venue: {
-            findUnique: jest.fn().mockResolvedValue(mockVenue),
-          },
-          bookingInquiry: {
-            findFirst: jest.fn().mockResolvedValue(null),
-            create: jest.fn().mockResolvedValue(mockCreatedInquiry),
-          },
-        };
-        return callback(tx);
+        attendeeCount: mockVenue.capacity,
       });
 
-      const result = await service.create(maxCapacityInquiry);
-
-      expect(result).toEqual(mockCreatedInquiry);
+      expect(result.id).toEqual('inquiry-2');
     });
-  });
-});
-

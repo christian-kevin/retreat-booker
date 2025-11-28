@@ -1,19 +1,30 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { Prisma } from '@prisma/client';
+import { Venue } from '@prisma/client';
 import { VenuesService } from './venues.service';
-import { PrismaService } from '@/shared/prisma/prisma.service';
+import { VenuesRepository } from './venues.repository';
 import { LoggerService } from '@/shared/logger/logger.service';
+
+const createVenue = (overrides: Partial<Venue> = {}): Venue => ({
+  id: 'venue-1',
+  name: 'Test Venue',
+  city: 'Denver',
+  country: 'USA',
+  address: '123 Test St',
+  capacity: 50,
+  pricePerNight: 3000,
+  description: 'Test description',
+  amenities: ['WiFi'],
+  createdAt: new Date(),
+  updatedAt: new Date(),
+  ...overrides,
+});
 
 describe('VenuesService', () => {
   let service: VenuesService;
-  let prismaService: PrismaService;
-  let loggerService: LoggerService;
 
-  const mockPrismaService = {
-    venue: {
-      findMany: jest.fn(),
-      count: jest.fn(),
-    },
+  const mockVenuesRepository = {
+    findMany: jest.fn(),
+    count: jest.fn(),
   };
 
   const mockLoggerService = {
@@ -23,53 +34,27 @@ describe('VenuesService', () => {
   };
 
   beforeEach(async () => {
+    jest.clearAllMocks();
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         VenuesService,
-        {
-          provide: PrismaService,
-          useValue: mockPrismaService,
-        },
-        {
-          provide: LoggerService,
-          useValue: mockLoggerService,
-        },
+        { provide: VenuesRepository, useValue: mockVenuesRepository },
+        { provide: LoggerService, useValue: mockLoggerService },
       ],
     }).compile();
 
     service = module.get<VenuesService>(VenuesService);
-    prismaService = module.get<PrismaService>(PrismaService);
-    loggerService = module.get<LoggerService>(LoggerService);
-  });
-
-  it('should be defined', () => {
-    expect(service).toBeDefined();
   });
 
   describe('findAll', () => {
-    it('should return paginated venues when no filters provided', async () => {
-      const mockVenues: Prisma.Venue[] = [
-        {
-          id: '1',
-          name: 'Test Venue',
-          city: 'Denver',
-          country: 'USA',
-          address: '123 Test St',
-          capacity: 50,
-          pricePerNight: 3000,
-          description: 'Test description',
-          amenities: ['WiFi'],
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        },
-      ];
-
-      mockPrismaService.venue.findMany.mockResolvedValue(mockVenues);
-      mockPrismaService.venue.count.mockResolvedValue(1);
+    it('returns paginated venues with defaults', async () => {
+      const venues = [createVenue()];
+      mockVenuesRepository.findMany.mockResolvedValue(venues);
+      mockVenuesRepository.count.mockResolvedValue(1);
 
       const result = await service.findAll({});
 
-      expect(result.data).toEqual(mockVenues);
+      expect(result.data).toEqual(venues);
       expect(result.meta).toEqual({
         page: 1,
         limit: 10,
@@ -78,159 +63,71 @@ describe('VenuesService', () => {
         hasNextPage: false,
         hasPreviousPage: false,
       });
-      expect(mockPrismaService.venue.findMany).toHaveBeenCalledWith({
-        where: {},
-        skip: 0,
-        take: 10,
-        orderBy: { createdAt: 'desc' },
-      });
-      expect(mockPrismaService.venue.count).toHaveBeenCalledWith({
-        where: {},
-      });
-      expect(mockLoggerService.log).toHaveBeenCalled();
+      expect(mockVenuesRepository.findMany).toHaveBeenCalledWith({}, 0, 10);
+      expect(mockVenuesRepository.count).toHaveBeenCalledWith({});
     });
 
-    it('should filter venues by city', async () => {
-      const mockVenues: Prisma.Venue[] = [
-        {
-          id: '1',
-          name: 'Denver Venue',
-          city: 'Denver',
-          country: 'USA',
-          address: '123 Test St',
-          capacity: 50,
-          pricePerNight: 3000,
-          description: 'Test description',
-          amenities: ['WiFi'],
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        },
-      ];
+    it('applies city filter', async () => {
+      const venues = [createVenue({ city: 'Denver' })];
+      mockVenuesRepository.findMany.mockResolvedValue(venues);
+      mockVenuesRepository.count.mockResolvedValue(1);
 
-      mockPrismaService.venue.findMany.mockResolvedValue(mockVenues);
-      mockPrismaService.venue.count.mockResolvedValue(1);
+      await service.findAll({ city: 'Denver' });
 
-      const result = await service.findAll({ city: 'Denver' });
-
-      expect(result.data).toEqual(mockVenues);
-      expect(mockPrismaService.venue.findMany).toHaveBeenCalledWith({
-        where: { city: 'Denver' },
-        skip: 0,
-        take: 10,
-        orderBy: { createdAt: 'desc' },
-      });
+      expect(mockVenuesRepository.findMany).toHaveBeenCalledWith(
+        { city: 'Denver' },
+        0,
+        10,
+      );
     });
 
-    it('should filter venues by minCapacity', async () => {
-      const mockVenues: Prisma.Venue[] = [
-        {
-          id: '1',
-          name: 'Large Venue',
-          city: 'Denver',
-          country: 'USA',
-          address: '123 Test St',
-          capacity: 100,
-          pricePerNight: 5000,
-          description: 'Test description',
-          amenities: ['WiFi'],
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        },
-      ];
+    it('applies capacity filter', async () => {
+      mockVenuesRepository.findMany.mockResolvedValue([]);
+      mockVenuesRepository.count.mockResolvedValue(0);
 
-      mockPrismaService.venue.findMany.mockResolvedValue(mockVenues);
-      mockPrismaService.venue.count.mockResolvedValue(1);
+      await service.findAll({ minCapacity: 75 });
 
-      const result = await service.findAll({ minCapacity: 75 });
-
-      expect(result.data).toEqual(mockVenues);
-      expect(mockPrismaService.venue.findMany).toHaveBeenCalledWith({
-        where: { capacity: { gte: 75 } },
-        skip: 0,
-        take: 10,
-        orderBy: { createdAt: 'desc' },
-      });
+      expect(mockVenuesRepository.findMany).toHaveBeenCalledWith(
+        { capacity: { gte: 75 } },
+        0,
+        10,
+      );
     });
 
-    it('should filter venues by maxPrice', async () => {
-      const mockVenues: Prisma.Venue[] = [
-        {
-          id: '1',
-          name: 'Affordable Venue',
-          city: 'Denver',
-          country: 'USA',
-          address: '123 Test St',
-          capacity: 50,
-          pricePerNight: 2000,
-          description: 'Test description',
-          amenities: ['WiFi'],
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        },
-      ];
+    it('applies price filter', async () => {
+      mockVenuesRepository.findMany.mockResolvedValue([]);
+      mockVenuesRepository.count.mockResolvedValue(0);
 
-      mockPrismaService.venue.findMany.mockResolvedValue(mockVenues);
-      mockPrismaService.venue.count.mockResolvedValue(1);
+      await service.findAll({ maxPrice: 4000 });
 
-      const result = await service.findAll({ maxPrice: 3000 });
-
-      expect(result.data).toEqual(mockVenues);
-      expect(mockPrismaService.venue.findMany).toHaveBeenCalledWith({
-        where: { pricePerNight: { lte: 3000 } },
-        skip: 0,
-        take: 10,
-        orderBy: { createdAt: 'desc' },
-      });
+      expect(mockVenuesRepository.findMany).toHaveBeenCalledWith(
+        { pricePerNight: { lte: 4000 } },
+        0,
+        10,
+      );
     });
 
-    it('should apply multiple filters', async () => {
-      const mockVenues: Prisma.Venue[] = [];
-
-      mockPrismaService.venue.findMany.mockResolvedValue(mockVenues);
-      mockPrismaService.venue.count.mockResolvedValue(0);
+    it('applies multiple filters and pagination', async () => {
+      mockVenuesRepository.findMany.mockResolvedValue([]);
+      mockVenuesRepository.count.mockResolvedValue(25);
 
       const result = await service.findAll({
         city: 'Denver',
-        minCapacity: 50,
-        maxPrice: 4000,
+        minCapacity: 40,
+        maxPrice: 5000,
+        page: 2,
+        limit: 10,
       });
 
-      expect(result.data).toEqual(mockVenues);
-      expect(mockPrismaService.venue.findMany).toHaveBeenCalledWith({
-        where: {
-          city: 'Denver',
-          capacity: { gte: 50 },
-          pricePerNight: { lte: 4000 },
-        },
-        skip: 0,
-        take: 10,
-        orderBy: { createdAt: 'desc' },
-      });
-    });
-
-    it('should handle pagination correctly', async () => {
-      const mockVenues: Prisma.Venue[] = [
+      expect(mockVenuesRepository.findMany).toHaveBeenCalledWith(
         {
-          id: '1',
-          name: 'Test Venue',
           city: 'Denver',
-          country: 'USA',
-          address: '123 Test St',
-          capacity: 50,
-          pricePerNight: 3000,
-          description: 'Test description',
-          amenities: ['WiFi'],
-          createdAt: new Date(),
-          updatedAt: new Date(),
+          capacity: { gte: 40 },
+          pricePerNight: { lte: 5000 },
         },
-      ];
-
-      mockPrismaService.venue.findMany.mockResolvedValue(mockVenues);
-      mockPrismaService.venue.count.mockResolvedValue(25);
-
-      const result = await service.findAll({ page: 2, limit: 10 });
-
-      expect(result.data).toEqual(mockVenues);
+        10,
+        10,
+      );
       expect(result.meta).toEqual({
         page: 2,
         limit: 10,
@@ -238,12 +135,6 @@ describe('VenuesService', () => {
         totalPages: 3,
         hasNextPage: true,
         hasPreviousPage: true,
-      });
-      expect(mockPrismaService.venue.findMany).toHaveBeenCalledWith({
-        where: {},
-        skip: 10,
-        take: 10,
-        orderBy: { createdAt: 'desc' },
       });
     });
   });

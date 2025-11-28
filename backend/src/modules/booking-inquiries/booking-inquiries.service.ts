@@ -3,15 +3,17 @@ import {
   BadRequestException,
   ConflictException,
 } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
-import { PrismaService } from '@/shared/prisma/prisma.service';
 import { LoggerService } from '@/shared/logger/logger.service';
 import { CreateBookingInquiryDto } from './dto/create-booking-inquiry.dto';
+import {
+  BookingInquiriesRepository,
+  BookingInquiriesRepositoryTx,
+} from './booking-inquiries.repository';
 
 @Injectable()
 export class BookingInquiriesService {
   constructor(
-    private readonly prisma: PrismaService,
+    private readonly bookingRepository: BookingInquiriesRepository,
     private readonly logger: LoggerService,
   ) {}
 
@@ -21,62 +23,58 @@ export class BookingInquiriesService {
       'BookingInquiriesService',
     );
 
-    return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-      const venue = await tx.venue.findUnique({
-        where: { id: createDto.venueId },
-      });
+    const venue = await this.bookingRepository.findVenueById(createDto.venueId);
 
-      if (!venue) {
-        this.logger.warn(
-          `Venue not found: ${createDto.venueId}`,
-          'BookingInquiriesService',
-        );
-        throw new BadRequestException('Venue not found');
-      }
+    if (!venue) {
+      this.logger.warn(
+        `Venue not found: ${createDto.venueId}`,
+        'BookingInquiriesService',
+      );
+      throw new BadRequestException('Venue not found');
+    }
 
-      if (createDto.attendeeCount > venue.capacity) {
-        this.logger.warn(
-          `Attendee count ${createDto.attendeeCount} exceeds venue capacity ${venue.capacity}`,
-          'BookingInquiriesService',
-        );
-        throw new BadRequestException(
-          `Attendee count exceeds venue capacity of ${venue.capacity}`,
-        );
-      }
+    if (createDto.attendeeCount > venue.capacity) {
+      this.logger.warn(
+        `Attendee count ${createDto.attendeeCount} exceeds venue capacity ${venue.capacity}`,
+        'BookingInquiriesService',
+      );
+      throw new BadRequestException(
+        `Attendee count exceeds venue capacity of ${venue.capacity}`,
+      );
+    }
 
-      const overlapping = await tx.bookingInquiry.findFirst({
-        where: {
-          venueId: createDto.venueId,
-          startDate: { lte: new Date(createDto.endDate) },
-          endDate: { gte: new Date(createDto.startDate) },
-        },
-      });
-
-      if (overlapping) {
-        this.logger.warn(
-          `Date range conflicts with existing booking for venue ${createDto.venueId}`,
-          'BookingInquiriesService',
+    const inquiry = await this.bookingRepository.runInTransaction(
+      async (repo: BookingInquiriesRepositoryTx) => {
+        const overlapping = await repo.findOverlappingBooking(
+          createDto.venueId,
+          new Date(createDto.startDate),
+          new Date(createDto.endDate),
         );
-        throw new ConflictException(
-          'Date range conflicts with existing booking',
-        );
-      }
 
-      const inquiry = await tx.bookingInquiry.create({
-        data: {
+        if (overlapping) {
+          this.logger.warn(
+            `Date range conflicts with existing booking for venue ${createDto.venueId}`,
+            'BookingInquiriesService',
+          );
+          throw new ConflictException(
+            'Date range conflicts with existing booking',
+          );
+        }
+
+        return repo.createBookingInquiry({
           ...createDto,
           startDate: new Date(createDto.startDate),
           endDate: new Date(createDto.endDate),
           version: 0,
-        },
-      });
+        });
+      },
+    );
 
-      this.logger.log(
-        `Booking inquiry created: ${inquiry.id}`,
-        'BookingInquiriesService',
-      );
-      return inquiry;
-    });
+    this.logger.log(
+      `Booking inquiry created: ${inquiry.id}`,
+      'BookingInquiriesService',
+    );
+    return inquiry;
   }
 }
 

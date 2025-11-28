@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '@/shared/prisma/prisma.service';
 import { LoggerService } from '@/shared/logger/logger.service';
 import { VenuesQueryDto } from './dto/venues-query.dto';
+import { VenuesRepository } from './venues.repository';
 
 @Injectable()
 export class VenuesService {
   constructor(
-    private readonly prisma: PrismaService,
+    private readonly venuesRepository: VenuesRepository,
     private readonly logger: LoggerService,
   ) {}
 
@@ -26,13 +26,8 @@ export class VenuesService {
     };
 
     const [venues, total] = await Promise.all([
-      this.prisma.venue.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy: { createdAt: 'desc' },
-      }),
-      this.prisma.venue.count({ where }),
+      this.venuesRepository.findMany(where, skip, limit),
+      this.venuesRepository.count(where),
     ]);
 
     const totalPages = Math.ceil(total / limit);
