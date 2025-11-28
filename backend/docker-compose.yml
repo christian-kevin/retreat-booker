@@ -17,6 +17,7 @@ services:
     build: .
     volumes:
       - .:/app
+      - /app/node_modules
     environment:
       - DATABASE_URL=postgresql://retreat:retreat123@postgres:5432/retreat_db?schema=public
     ports:
