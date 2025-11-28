@@ -81,9 +81,99 @@ Query params: `city`, `minCapacity`, `maxPrice`
 - **Validation:** Class-validator DTOs with business logic checks
 - **Documentation:** Swagger/OpenAPI at `/api`
 
+## Double Booking Prevention
+
+To prevent double bookings, implement one of these strategies:
+
+### 1. Optimistic Locking (Recommended)
+Use version field with optimistic concurrency control:
+
+```typescript
+// Prisma schema
+model BookingInquiry {
+  id            String   @id @default(uuid())
+  venueId      String
+  startDate    DateTime
+  endDate      DateTime
+  version      Int      @default(0)  // Optimistic lock field
+  // ... other fields
+}
+
+// Service implementation
+async create(inquiry: CreateBookingInquiryDto) {
+  // Check for overlapping bookings
+  const overlapping = await this.prisma.bookingInquiry.findFirst({
+    where: {
+      venueId: inquiry.venueId,
+      startDate: { lte: inquiry.endDate },
+      endDate: { gte: inquiry.startDate },
+    },
+  });
+  
+  if (overlapping) {
+    throw new ConflictException('Date range conflicts with existing booking');
+  }
+  
+  // Create with transaction
+  return this.prisma.$transaction(async (tx) => {
+    return tx.bookingInquiry.create({ data: inquiry });
+  });
+}
+```
+
+### 2. Database Constraints
+Add unique constraint on venue + date range:
+
+```sql
+CREATE UNIQUE INDEX unique_venue_booking 
+ON "BookingInquiry" ("venueId", "startDate", "endDate")
+WHERE "status" = 'confirmed';
+```
+
+### 3. Pessimistic Locking
+Use `SELECT FOR UPDATE` to lock rows during transaction:
+
+```typescript
+await this.prisma.$transaction(async (tx) => {
+  // Lock venue bookings
+  await tx.$executeRaw`
+    SELECT * FROM "BookingInquiry" 
+    WHERE "venueId" = ${inquiry.venueId}
+    FOR UPDATE
+  `;
+  
+  // Check conflicts
+  // Create booking
+});
+```
+
+### 4. Distributed Locking (Redis)
+For multi-instance deployments, use Redis locks:
+
+```typescript
+const lockKey = `venue:${inquiry.venueId}:${inquiry.startDate}`;
+const lock = await redis.acquireLock(lockKey, 5000); // 5s timeout
+
+try {
+  // Check and create booking
+} finally {
+  await redis.releaseLock(lockKey, lock);
+}
+```
+
+**Recommended Approach:** Optimistic locking + database constraints for simplicity and performance.
+
 ## Improvements With More Time
 
 **Backend:** Authentication (JWT), pagination, rate limiting, email service, availability checking, API versioning
+
+**Caching:**
+- Redis for query result caching (venue listings, filters)
+- Cache invalidation strategies (TTL, event-based)
+- Distributed caching for multi-instance deployments
+- Cache warming for frequently accessed data
+- HTTP response caching with ETags
+- Database query result caching
 
 **Frontend:** Date picker, image gallery, map integration, real-time validation, accessibility, component tests
 
