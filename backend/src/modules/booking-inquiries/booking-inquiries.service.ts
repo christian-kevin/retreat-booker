@@ -23,6 +23,28 @@ export class BookingInquiriesService {
       'BookingInquiriesService',
     );
 
+    const startDate = new Date(createDto.startDate);
+    const endDate = new Date(createDto.endDate);
+    const now = new Date();
+
+    if (startDate >= endDate) {
+      this.logger.warn(
+        `Invalid date range: start date ${createDto.startDate} must be before end date ${createDto.endDate}`,
+        'BookingInquiriesService',
+      );
+      throw new BadRequestException(
+        'Start date must be before end date',
+      );
+    }
+
+    if (startDate < now) {
+      this.logger.warn(
+        `Start date ${createDto.startDate} is in the past`,
+        'BookingInquiriesService',
+      );
+      throw new BadRequestException('Start date cannot be in the past');
+    }
+
     const venue = await this.bookingRepository.findVenueById(createDto.venueId);
 
     if (!venue) {
@@ -47,8 +69,8 @@ export class BookingInquiriesService {
       async (repo: BookingInquiriesRepositoryTx) => {
         const overlapping = await repo.findOverlappingBooking(
           createDto.venueId,
-          new Date(createDto.startDate),
-          new Date(createDto.endDate),
+          startDate,
+          endDate,
         );
 
         if (overlapping) {
@@ -63,8 +85,8 @@ export class BookingInquiriesService {
 
         return repo.createBookingInquiry({
           ...createDto,
-          startDate: new Date(createDto.startDate),
-          endDate: new Date(createDto.endDate),
+          startDate,
+          endDate,
           version: 0,
         });
       },

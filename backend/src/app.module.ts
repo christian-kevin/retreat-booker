@@ -3,9 +3,10 @@ import { VenuesModule } from './modules/venues/venues.module';
 import { BookingInquiriesModule } from './modules/booking-inquiries/booking-inquiries.module';
 import { PrismaModule } from './shared/prisma/prisma.module';
 import { LoggerModule } from './shared/logger/logger.module';
+import { HealthModule } from './health/health.module';
 
 @Module({
-  imports: [PrismaModule, LoggerModule, VenuesModule, BookingInquiriesModule],
+  imports: [PrismaModule, LoggerModule, HealthModule, VenuesModule, BookingInquiriesModule],
 })
 export class AppModule {}
 

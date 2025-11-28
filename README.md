@@ -11,6 +11,7 @@ Full-stack venue management system for booking team offsite locations.
 - **Linting:** ESLint with TypeScript support for code quality and consistency
 - **Logging:** Custom structured logger with timestamp, log level, and context tracking
 - **Testing:** Jest unit tests for service layer with mocked dependencies, covering business logic and edge cases
+- **Health Checks:** `/health` endpoint for service monitoring and Docker Compose orchestration, ensuring proper startup order
 
 ## Setup Instructions
 
@@ -44,6 +45,9 @@ docker-compose up
 - Backend: `http://localhost:3002`
 - Frontend: `http://localhost:3001`
 - API Docs: `http://localhost:3002/api` (Swagger)
+- Health Check: `http://localhost:3002/health` (returns service status and database connection)
+
+**Note:** Docker Compose includes health checks to ensure services start in the correct order. The frontend waits for the backend to be healthy before starting, preventing connection errors.
 
 ## Testing
 
