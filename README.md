@@ -119,6 +119,15 @@ npm run test:cov
 npm run test:e2e
 ```
 
+**Docker Compose Testing:**
+```bash
+# Run unit tests in Docker
+docker-compose --profile test run --rm backend-test
+
+# Run E2E tests in Docker
+docker-compose --profile test run --rm backend-e2e
+```
+
 **Test Coverage:**
 - Unit tests for VenuesService (filtering logic)
 - Unit tests for BookingInquiriesService (validation logic)
@@ -226,22 +235,18 @@ curl -X POST http://localhost:3000/booking-inquiries \
 1. **No authentication** - Simplified scope, would add JWT/OAuth in production
 2. **No pagination** - Works for demo with 10 venues, would add for scale
 3. **Simple error handling** - Basic validation, would add more edge cases
-4. **No testing** - Focused on functionality, would add unit/e2e tests
-5. **No caching** - Direct DB queries, would add Redis for production
+4. **No caching** - Direct DB queries, would add Redis for production
 
 ## What I'd Improve With More Time
 
 ### Backend
 1. **Authentication & Authorization** - JWT tokens, role-based access
-2. **Testing** - Unit tests (Jest), E2E tests (Supertest)
-3. **Pagination** - Cursor-based pagination for venues endpoint
-4. **Rate Limiting** - Prevent abuse
-5. **Email Service** - Send confirmation emails for booking inquiries
-6. **Availability Checking** - Prevent double-bookings
-7. **Advanced Filters** - Price ranges, date availability, amenities
-8. **API Versioning** - /v1/ prefix for future compatibility
-9. **OpenAPI/Swagger** - Auto-generated API documentation
-10. **Monitoring** - APM, error tracking (Sentry), metrics
+2. **Pagination** - Cursor-based pagination for venues endpoint
+3. **Rate Limiting** - Prevent abuse
+4. **Email Service** - Send confirmation emails for booking inquiries
+5. **Availability Checking** - Prevent double-bookings
+6. **Advanced Filters** - Price ranges, date availability, amenities
+7. **API Versioning** - /v1/ prefix for future compatibility
 
 ### Frontend
 1. **Date Picker** - Better UX with calendar component
@@ -255,13 +260,45 @@ curl -X POST http://localhost:3000/booking-inquiries \
 9. **State Management** - Zustand/Redux for complex state
 10. **Animation** - Smooth transitions and loading skeletons
 
-### DevOps
+### DevOps & CI/CD
 1. **CI/CD Pipeline** - GitHub Actions for automated testing/deployment
+   - Run unit tests on every PR
+   - Run E2E tests before merge
+   - Automated deployment to staging/production
+   - Test coverage reporting and enforcement
+   - Linting and formatting checks
+   - Security vulnerability scanning
 2. **Environment Management** - Staging/production configs
 3. **Database Migrations** - Automated migration strategy
 4. **Health Checks** - Kubernetes-ready health endpoints
 5. **Docker Optimization** - Multi-stage builds, smaller images
 6. **Deployment** - Deploy to Vercel (frontend) and Railway/Render (backend)
+
+### Monitoring & Observability
+1. **Application Performance Monitoring (APM)**
+   - New Relic, Datadog, or Elastic APM
+   - Track response times, throughput, error rates
+   - Database query performance monitoring
+   - Identify slow endpoints and bottlenecks
+2. **Error Tracking**
+   - Sentry for real-time error monitoring
+   - Stack traces and context capture
+   - Error alerting and notification
+   - Error grouping and deduplication
+3. **Metrics & Logging**
+   - Prometheus + Grafana for metrics visualization
+   - Structured logging with correlation IDs
+   - Log aggregation (ELK stack or CloudWatch)
+   - Custom business metrics (bookings per day, revenue)
+4. **Uptime Monitoring**
+   - Health check endpoints with detailed status
+   - External monitoring (UptimeRobot, Pingdom)
+   - SLA tracking and reporting
+5. **Performance Monitoring**
+   - Frontend performance (Web Vitals)
+   - API response time tracking
+   - Database query performance
+   - Memory and CPU usage alerts
 
 ### General
 1. **Monorepo Tools** - Turborepo or Nx for better DX

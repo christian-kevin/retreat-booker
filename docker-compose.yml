@@ -40,5 +40,31 @@ services:
       - backend
     command: npm run dev
 
+  backend-test:
+    build: ./backend
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    environment:
+      - DATABASE_URL=postgresql://retreat:retreat123@postgres:5432/retreat_db?schema=public
+    depends_on:
+      - postgres
+    command: npm run test
+    profiles:
+      - test
+
+  backend-e2e:
+    build: ./backend
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    environment:
+      - DATABASE_URL=postgresql://retreat:retreat123@postgres:5432/retreat_db?schema=public
+    depends_on:
+      - postgres
+    command: npm run test:e2e
+    profiles:
+      - test
+
 volumes:
   postgres_data:
