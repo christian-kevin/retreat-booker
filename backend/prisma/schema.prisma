@@ -35,9 +35,11 @@ model BookingInquiry {
   startDate     DateTime
   endDate       DateTime
   attendeeCount Int
+  version       Int      @default(0)
   createdAt     DateTime @default(now())
 
   @@index([venueId])
   @@index([email])
+  @@index([venueId, startDate, endDate])
 }
 

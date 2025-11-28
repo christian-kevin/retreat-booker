@@ -7,13 +7,13 @@ Full-stack venue management system for booking team offsite locations.
 **Backend:** NestJS, TypeScript, Prisma, PostgreSQL, Docker  
 **Frontend:** Next.js 14, TypeScript, React, TailwindCSS
 
-## Quick Start
+## Setup Instructions
 
 ### Prerequisites
 - Node.js 18+
 - Docker & Docker Compose
 
-### Setup
+### Quick Start
 
 ```bash
 # Backend
@@ -40,174 +40,40 @@ docker-compose up
 - Frontend: `http://localhost:3001`
 - API Docs: `http://localhost:3000/api` (Swagger)
 
-## Testing
+## Approach & Tradeoffs
 
-```bash
-cd backend
+**Architecture:**
+- Modular NestJS backend with feature-based modules (venues, booking-inquiries)
+- Next.js App Router with server/client component separation
+- Prisma ORM for type-safe database access
+- PostgreSQL for production-ready data persistence
 
-# Unit tests
-npm run test
+**Key Design Decisions:**
+- **Prisma over TypeORM:** Better TypeScript integration and developer experience
+- **Class-validator:** Declarative validation with decorators
+- **Custom logger:** Simple structured logging sufficient for scope
+- **Optimistic locking:** Prevents double bookings using version field and transaction-based conflict detection
+- **No authentication:** Simplified scope for demo, would add JWT/OAuth in production
+- **No pagination:** Works for demo with limited venues, would add cursor-based pagination for scale
+- **No caching:** Direct DB queries, would add Redis for production performance
 
-# E2E tests
-npm run test:e2e
-
-# Docker
-docker-compose --profile test run --rm backend-test
-docker-compose --profile test run --rm backend-e2e
-```
-
-## API Endpoints
-
-### GET /venues
-Query params: `city`, `minCapacity`, `maxPrice`
-
-### POST /booking-inquiries
-```json
-{
-  "venueId": "uuid",
-  "companyName": "string",
-  "email": "string",
-  "startDate": "2025-01-01",
-  "endDate": "2025-01-05",
-  "attendeeCount": 20
-}
-```
-
-## Architecture
-
-- **Backend:** Modular NestJS architecture with Prisma ORM
-- **Frontend:** Next.js App Router with server/client components
-- **Database:** PostgreSQL with Prisma migrations
-- **Validation:** Class-validator DTOs with business logic checks
-- **Documentation:** Swagger/OpenAPI at `/api`
-
-## Double Booking Prevention
-
-To prevent double bookings, implement one of these strategies:
-
-### 1. Optimistic Locking (Recommended)
-Use version field with optimistic concurrency control:
-
-```typescript
-// Prisma schema
-model BookingInquiry {
-  id            String   @id @default(uuid())
-  venueId      String
-  startDate    DateTime
-  endDate      DateTime
-  version      Int      @default(0)  // Optimistic lock field
-  // ... other fields
-}
-
-// Service implementation
-async create(inquiry: CreateBookingInquiryDto) {
-  // Check for overlapping bookings
-  const overlapping = await this.prisma.bookingInquiry.findFirst({
-    where: {
-      venueId: inquiry.venueId,
-      startDate: { lte: inquiry.endDate },
-      endDate: { gte: inquiry.startDate },
-    },
-  });
-  
-  if (overlapping) {
-    throw new ConflictException('Date range conflicts with existing booking');
-  }
-  
-  // Create with transaction
-  return this.prisma.$transaction(async (tx) => {
-    return tx.bookingInquiry.create({ data: inquiry });
-  });
-}
-```
-
-### 2. Database Constraints
-Add unique constraint on venue + date range:
-
-```sql
-CREATE UNIQUE INDEX unique_venue_booking 
-ON "BookingInquiry" ("venueId", "startDate", "endDate")
-WHERE "status" = 'confirmed';
-```
-
-### 3. Pessimistic Locking
-Use `SELECT FOR UPDATE` to lock rows during transaction:
-
-```typescript
-await this.prisma.$transaction(async (tx) => {
-  // Lock venue bookings
-  await tx.$executeRaw`
-    SELECT * FROM "BookingInquiry" 
-    WHERE "venueId" = ${inquiry.venueId}
-    FOR UPDATE
-  `;
-  
-  // Check conflicts
-  // Create booking
-});
-```
-
-### 4. Distributed Locking (Redis)
-For multi-instance deployments, use Redis locks:
-
-```typescript
-const lockKey = `venue:${inquiry.venueId}:${inquiry.startDate}`;
-const lock = await redis.acquireLock(lockKey, 5000); // 5s timeout
-
-try {
-  // Check and create booking
-} finally {
-  await redis.releaseLock(lockKey, lock);
-}
-```
-
-**Recommended Approach:** Optimistic locking + database constraints for simplicity and performance.
+**Double Booking Prevention:**
+Implemented optimistic locking with transaction-based conflict checking. Checks for overlapping date ranges within a database transaction to prevent race conditions.
 
 ## Improvements With More Time
 
-**Backend:** Authentication (JWT), pagination, rate limiting, email service, availability checking, API versioning
+**Backend:** Authentication (JWT), pagination, rate limiting, email service, API versioning
 
-**Caching:**
-- Redis for query result caching (venue listings, filters)
-- Cache invalidation strategies (TTL, event-based)
-- Distributed caching for multi-instance deployments
-- Cache warming for frequently accessed data
-- HTTP response caching with ETags
-- Database query result caching
+**Caching:** Redis for query result caching, cache invalidation strategies, distributed caching for multi-instance deployments
 
 **Frontend:** Date picker, image gallery, map integration, real-time validation, accessibility, component tests
 
-**Environment Management:**
-- Multiple environments (dev, staging, production) with separate configs
-- Environment-specific database instances
-- Feature flags per environment
-- Environment-based feature toggles
+**Environment Management:** Multiple environments (dev, staging, production), environment-specific configs and databases
 
-**Configuration & Secrets Management:**
-- HashiCorp Vault for secure secrets storage
-- Dynamic configuration updates without redeployment
-- Secret rotation policies
-- Environment-specific secrets (API keys, DB credentials, JWT secrets)
-- Integration with CI/CD for automated secret injection
+**Configuration & Secrets:** HashiCorp Vault for secure secrets storage, dynamic configuration updates, secret rotation
 
-**Feature Flags:**
-- Flipper or LaunchDarkly for feature toggling
-- A/B testing capabilities
-- Gradual feature rollouts
-- Kill switches for problematic features
-- User/tenant-based feature flags
+**Feature Flags:** Flipper or LaunchDarkly for feature toggling, A/B testing, gradual rollouts
 
-**DevOps & CI/CD:** GitHub Actions pipeline, automated testing/deployment, test coverage reporting, security scanning, multi-environment deployments
+**DevOps & CI/CD:** GitHub Actions pipeline, automated testing/deployment, test coverage reporting, security scanning
 
-**Monitoring:** APM (New Relic/Datadog), error tracking (Sentry), metrics (Prometheus/Grafana), uptime monitoring, performance tracking
-
-## Deployment
-
-**Backend:** Railway/Render with PostgreSQL  
-**Frontend:** Vercel
-
-See `DEPLOYMENT.md` for detailed instructions.
-
-## License
-
-MIT
+**Monitoring:** APM (New Relic/Datadog), error tracking (Sentry), metrics (Prometheus/Grafana), uptime monitoring
