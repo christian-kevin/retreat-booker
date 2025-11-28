@@ -63,6 +63,8 @@ npm run start:dev
 
 Backend will be available at `http://localhost:3000`
 
+**API Documentation:** `http://localhost:3000/api` (Swagger UI)
+
 ### Frontend Setup
 
 ```bash
@@ -97,6 +99,43 @@ npm run docker:lint       # Docker
 npm run format            # Local
 npm run docker:format     # Docker
 ```
+
+### Testing
+
+**Backend Tests:**
+```bash
+cd backend
+
+# Unit tests
+npm run test
+
+# Watch mode
+npm run test:watch
+
+# Coverage
+npm run test:cov
+
+# E2E tests
+npm run test:e2e
+```
+
+**Test Coverage:**
+- Unit tests for VenuesService (filtering logic)
+- Unit tests for BookingInquiriesService (validation logic)
+- E2E tests for all API endpoints
+- Validation error handling tests
+
+### API Documentation
+
+Interactive API documentation is available via Swagger UI:
+
+**Local:** `http://localhost:3000/api`
+
+Features:
+- Interactive API explorer
+- Request/response schemas
+- Try out endpoints directly
+- Automatic validation documentation
 
 ## API Endpoints
 
