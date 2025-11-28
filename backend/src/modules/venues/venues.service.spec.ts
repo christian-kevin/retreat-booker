@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { Prisma } from '@prisma/client';
 import { VenuesService } from './venues.service';
 import { PrismaService } from '@/shared/prisma/prisma.service';
 import { LoggerService } from '@/shared/logger/logger.service';
@@ -47,7 +48,7 @@ describe('VenuesService', () => {
 
   describe('findAll', () => {
     it('should return paginated venues when no filters provided', async () => {
-      const mockVenues = [
+      const mockVenues: Prisma.Venue[] = [
         {
           id: '1',
           name: 'Test Venue',
@@ -90,7 +91,7 @@ describe('VenuesService', () => {
     });
 
     it('should filter venues by city', async () => {
-      const mockVenues = [
+      const mockVenues: Prisma.Venue[] = [
         {
           id: '1',
           name: 'Denver Venue',
@@ -121,7 +122,7 @@ describe('VenuesService', () => {
     });
 
     it('should filter venues by minCapacity', async () => {
-      const mockVenues = [
+      const mockVenues: Prisma.Venue[] = [
         {
           id: '1',
           name: 'Large Venue',
@@ -152,7 +153,7 @@ describe('VenuesService', () => {
     });
 
     it('should filter venues by maxPrice', async () => {
-      const mockVenues = [
+      const mockVenues: Prisma.Venue[] = [
         {
           id: '1',
           name: 'Affordable Venue',
@@ -183,7 +184,7 @@ describe('VenuesService', () => {
     });
 
     it('should apply multiple filters', async () => {
-      const mockVenues = [];
+      const mockVenues: Prisma.Venue[] = [];
 
       mockPrismaService.venue.findMany.mockResolvedValue(mockVenues);
       mockPrismaService.venue.count.mockResolvedValue(0);
@@ -208,7 +209,7 @@ describe('VenuesService', () => {
     });
 
     it('should handle pagination correctly', async () => {
-      const mockVenues = [
+      const mockVenues: Prisma.Venue[] = [
         {
           id: '1',
           name: 'Test Venue',

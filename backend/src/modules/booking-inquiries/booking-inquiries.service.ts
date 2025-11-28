@@ -3,6 +3,7 @@ import {
   BadRequestException,
   ConflictException,
 } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '@/shared/prisma/prisma.service';
 import { LoggerService } from '@/shared/logger/logger.service';
 import { CreateBookingInquiryDto } from './dto/create-booking-inquiry.dto';
@@ -20,7 +21,7 @@ export class BookingInquiriesService {
       'BookingInquiriesService',
     );
 
-    return this.prisma.$transaction(async (tx) => {
+    return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const venue = await tx.venue.findUnique({
         where: { id: createDto.venueId },
       });
