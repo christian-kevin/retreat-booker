@@ -33,8 +33,38 @@ npx prisma db seed
 
 ### Running the Application
 
+**Local:**
 ```bash
 npm run start:dev
+```
+
+**Docker:**
+```bash
+docker-compose up
+```
+
+### Code Quality
+
+**Linting:**
+```bash
+# Local
+npm run lint
+
+# Docker
+npm run docker:lint
+# or
+docker-compose run --rm app npm run lint:check
+```
+
+**Formatting:**
+```bash
+# Local
+npm run format
+
+# Docker
+npm run docker:format
+# or
+docker-compose run --rm app npm run format:check
 ```
 
 ## API Endpoints
