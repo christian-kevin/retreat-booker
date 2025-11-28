@@ -40,6 +40,13 @@ docker-compose up
 - Frontend: `http://localhost:3001`
 - API Docs: `http://localhost:3000/api` (Swagger)
 
+## Deployment
+
+**Frontend (Vercel):** ✅ Yes - Next.js is optimized for Vercel deployment  
+**Backend (Vercel):** ❌ No - NestJS requires a long-running process (use Railway/Render/AWS instead)
+
+See `DEPLOYMENT.md` for detailed deployment instructions.
+
 ## Approach & Tradeoffs
 
 **Architecture:**
