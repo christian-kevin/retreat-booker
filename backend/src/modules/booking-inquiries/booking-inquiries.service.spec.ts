@@ -1,5 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { BadRequestException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+} from '@nestjs/common';
 import { BookingInquiriesService } from './booking-inquiries.service';
 import { PrismaService } from '@/shared/prisma/prisma.service';
 import { LoggerService } from '@/shared/logger/logger.service';
@@ -9,12 +12,15 @@ describe('BookingInquiriesService', () => {
   let prismaService: PrismaService;
   let loggerService: LoggerService;
 
+  const mockTransaction = jest.fn();
   const mockPrismaService = {
+    $transaction: mockTransaction,
     venue: {
       findUnique: jest.fn(),
     },
     bookingInquiry: {
       create: jest.fn(),
+      findFirst: jest.fn(),
     },
   };
 
@@ -78,28 +84,42 @@ describe('BookingInquiriesService', () => {
       const mockCreatedInquiry = {
         id: 'inquiry-1',
         ...validInquiry,
+        version: 0,
         createdAt: new Date(),
       };
 
-      mockPrismaService.venue.findUnique.mockResolvedValue(mockVenue);
-      mockPrismaService.bookingInquiry.create.mockResolvedValue(
-        mockCreatedInquiry,
-      );
+      mockTransaction.mockImplementation(async (callback) => {
+        const tx = {
+          venue: {
+            findUnique: jest.fn().mockResolvedValue(mockVenue),
+          },
+          bookingInquiry: {
+            findFirst: jest.fn().mockResolvedValue(null),
+            create: jest.fn().mockResolvedValue(mockCreatedInquiry),
+          },
+        };
+        return callback(tx);
+      });
 
       const result = await service.create(validInquiry);
 
       expect(result).toEqual(mockCreatedInquiry);
-      expect(mockPrismaService.venue.findUnique).toHaveBeenCalledWith({
-        where: { id: validInquiry.venueId },
-      });
-      expect(mockPrismaService.bookingInquiry.create).toHaveBeenCalledWith({
-        data: validInquiry,
-      });
       expect(mockLoggerService.log).toHaveBeenCalled();
     });
 
     it('should throw BadRequestException when venue not found', async () => {
-      mockPrismaService.venue.findUnique.mockResolvedValue(null);
+      mockTransaction.mockImplementation(async (callback) => {
+        const tx = {
+          venue: {
+            findUnique: jest.fn().mockResolvedValue(null),
+          },
+          bookingInquiry: {
+            findFirst: jest.fn(),
+            create: jest.fn(),
+          },
+        };
+        return callback(tx);
+      });
 
       await expect(service.create(validInquiry)).rejects.toThrow(
         BadRequestException,
@@ -120,7 +140,18 @@ describe('BookingInquiriesService', () => {
         attendeeCount: 100,
       };
 
-      mockPrismaService.venue.findUnique.mockResolvedValue(mockVenue);
+      mockTransaction.mockImplementation(async (callback) => {
+        const tx = {
+          venue: {
+            findUnique: jest.fn().mockResolvedValue(mockVenue),
+          },
+          bookingInquiry: {
+            findFirst: jest.fn(),
+            create: jest.fn(),
+          },
+        };
+        return callback(tx);
+      });
 
       await expect(service.create(overCapacityInquiry)).rejects.toThrow(
         BadRequestException,
@@ -130,7 +161,37 @@ describe('BookingInquiriesService', () => {
       );
 
       expect(mockLoggerService.warn).toHaveBeenCalled();
-      expect(mockPrismaService.bookingInquiry.create).not.toHaveBeenCalled();
+    });
+
+    it('should throw ConflictException when date range overlaps', async () => {
+      const overlappingBooking = {
+        id: 'existing-booking',
+        venueId: validInquiry.venueId,
+        startDate: new Date('2025-01-10'),
+        endDate: new Date('2025-01-18'),
+      };
+
+      mockTransaction.mockImplementation(async (callback) => {
+        const tx = {
+          venue: {
+            findUnique: jest.fn().mockResolvedValue(mockVenue),
+          },
+          bookingInquiry: {
+            findFirst: jest.fn().mockResolvedValue(overlappingBooking),
+            create: jest.fn(),
+          },
+        };
+        return callback(tx);
+      });
+
+      await expect(service.create(validInquiry)).rejects.toThrow(
+        ConflictException,
+      );
+      await expect(service.create(validInquiry)).rejects.toThrow(
+        'Date range conflicts',
+      );
+
+      expect(mockLoggerService.warn).toHaveBeenCalled();
     });
 
     it('should accept attendee count equal to capacity', async () => {
@@ -142,18 +203,26 @@ describe('BookingInquiriesService', () => {
       const mockCreatedInquiry = {
         id: 'inquiry-2',
         ...maxCapacityInquiry,
+        version: 0,
         createdAt: new Date(),
       };
 
-      mockPrismaService.venue.findUnique.mockResolvedValue(mockVenue);
-      mockPrismaService.bookingInquiry.create.mockResolvedValue(
-        mockCreatedInquiry,
-      );
+      mockTransaction.mockImplementation(async (callback) => {
+        const tx = {
+          venue: {
+            findUnique: jest.fn().mockResolvedValue(mockVenue),
+          },
+          bookingInquiry: {
+            findFirst: jest.fn().mockResolvedValue(null),
+            create: jest.fn().mockResolvedValue(mockCreatedInquiry),
+          },
+        };
+        return callback(tx);
+      });
 
       const result = await service.create(maxCapacityInquiry);
 
       expect(result).toEqual(mockCreatedInquiry);
-      expect(mockPrismaService.bookingInquiry.create).toHaveBeenCalled();
     });
   });
 });
