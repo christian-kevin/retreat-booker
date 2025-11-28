@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: retreat
+      POSTGRES_PASSWORD: retreat123
+      POSTGRES_DB: retreat_db
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  backend:
+    build: ./backend
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    environment:
+      - DATABASE_URL=postgresql://retreat:retreat123@postgres:5432/retreat_db?schema=public
+    ports:
+      - '3000:3000'
+    depends_on:
+      - postgres
+    command: npm run start:dev
+
+  web:
+    build: ./web
+    volumes:
+      - ./web:/app
+      - /app/node_modules
+      - /app/.next
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:3000
+    ports:
+      - '3001:3001'
+    depends_on:
+      - backend
+    command: npm run dev
+
+volumes:
+  postgres_data:
