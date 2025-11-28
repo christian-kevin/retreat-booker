@@ -66,7 +66,7 @@ Implemented optimistic locking with transaction-based conflict checking. Checks 
 
 **Caching:** Redis for query result caching, cache invalidation strategies, distributed caching for multi-instance deployments
 
-**Frontend:** Date picker, image gallery, map integration, real-time validation, accessibility, component tests
+**Frontend:** Date picker, image gallery, map integration, real-time validation, accessibility, component tests, i18n (internationalization) for multi-language support
 
 **Environment Management:** Multiple environments (dev, staging, production), environment-specific configs and databases
 
