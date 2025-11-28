@@ -49,13 +49,19 @@ describe('AppController (e2e)', () => {
   });
 
   describe('/venues (GET)', () => {
-    it('should return all venues', () => {
+    it('should return paginated venues', () => {
       return request(app.getHttpServer())
         .get('/venues')
         .expect(200)
         .expect((res) => {
-          expect(Array.isArray(res.body)).toBe(true);
-          expect(res.body.length).toBeGreaterThan(0);
+          expect(res.body).toHaveProperty('data');
+          expect(res.body).toHaveProperty('meta');
+          expect(Array.isArray(res.body.data)).toBe(true);
+          expect(res.body.data.length).toBeGreaterThan(0);
+          expect(res.body.meta).toHaveProperty('page');
+          expect(res.body.meta).toHaveProperty('limit');
+          expect(res.body.meta).toHaveProperty('total');
+          expect(res.body.meta).toHaveProperty('totalPages');
         });
     });
 
@@ -64,8 +70,10 @@ describe('AppController (e2e)', () => {
         .get('/venues?city=TestCity')
         .expect(200)
         .expect((res) => {
-          expect(Array.isArray(res.body)).toBe(true);
-          expect(res.body.every((v: any) => v.city === 'TestCity')).toBe(true);
+          expect(Array.isArray(res.body.data)).toBe(true);
+          expect(res.body.data.every((v: any) => v.city === 'TestCity')).toBe(
+            true,
+          );
         });
     });
 
@@ -74,8 +82,10 @@ describe('AppController (e2e)', () => {
         .get('/venues?minCapacity=40')
         .expect(200)
         .expect((res) => {
-          expect(Array.isArray(res.body)).toBe(true);
-          expect(res.body.every((v: any) => v.capacity >= 40)).toBe(true);
+          expect(Array.isArray(res.body.data)).toBe(true);
+          expect(
+            res.body.data.every((v: any) => v.capacity >= 40),
+          ).toBe(true);
         });
     });
 
@@ -84,10 +94,10 @@ describe('AppController (e2e)', () => {
         .get('/venues?maxPrice=4000')
         .expect(200)
         .expect((res) => {
-          expect(Array.isArray(res.body)).toBe(true);
-          expect(res.body.every((v: any) => v.pricePerNight <= 4000)).toBe(
-            true,
-          );
+          expect(Array.isArray(res.body.data)).toBe(true);
+          expect(
+            res.body.data.every((v: any) => v.pricePerNight <= 4000),
+          ).toBe(true);
         });
     });
 
@@ -96,7 +106,19 @@ describe('AppController (e2e)', () => {
         .get('/venues?city=NonExistentCity')
         .expect(200)
         .expect((res) => {
-          expect(res.body).toEqual([]);
+          expect(res.body.data).toEqual([]);
+          expect(res.body.meta.total).toBe(0);
+        });
+    });
+
+    it('should handle pagination parameters', () => {
+      return request(app.getHttpServer())
+        .get('/venues?page=1&limit=5')
+        .expect(200)
+        .expect((res) => {
+          expect(res.body.meta.page).toBe(1);
+          expect(res.body.meta.limit).toBe(5);
+          expect(res.body.data.length).toBeLessThanOrEqual(5);
         });
     });
 

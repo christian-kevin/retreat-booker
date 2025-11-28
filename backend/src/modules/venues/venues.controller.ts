@@ -9,7 +9,7 @@ export class VenuesController {
   constructor(private readonly venuesService: VenuesService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Get all venues with optional filters' })
+  @ApiOperation({ summary: 'Get paginated venues with optional filters' })
   @ApiQuery({ name: 'city', required: false, description: 'Filter by city' })
   @ApiQuery({
     name: 'minCapacity',
@@ -23,9 +23,21 @@ export class VenuesController {
     description: 'Maximum price per night',
     type: Number,
   })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    description: 'Page number (default: 1)',
+    type: Number,
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    description: 'Items per page (default: 10, max: 100)',
+    type: Number,
+  })
   @ApiResponse({
     status: 200,
-    description: 'List of venues matching the criteria',
+    description: 'Paginated list of venues matching the criteria',
   })
   findAll(@Query() query: VenuesQueryDto) {
     return this.venuesService.findAll(query);

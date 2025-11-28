@@ -11,6 +11,7 @@ describe('VenuesService', () => {
   const mockPrismaService = {
     venue: {
       findMany: jest.fn(),
+      count: jest.fn(),
     },
   };
 
@@ -45,7 +46,7 @@ describe('VenuesService', () => {
   });
 
   describe('findAll', () => {
-    it('should return all venues when no filters provided', async () => {
+    it('should return paginated venues when no filters provided', async () => {
       const mockVenues = [
         {
           id: '1',
@@ -63,11 +64,26 @@ describe('VenuesService', () => {
       ];
 
       mockPrismaService.venue.findMany.mockResolvedValue(mockVenues);
+      mockPrismaService.venue.count.mockResolvedValue(1);
 
       const result = await service.findAll({});
 
-      expect(result).toEqual(mockVenues);
+      expect(result.data).toEqual(mockVenues);
+      expect(result.meta).toEqual({
+        page: 1,
+        limit: 10,
+        total: 1,
+        totalPages: 1,
+        hasNextPage: false,
+        hasPreviousPage: false,
+      });
       expect(mockPrismaService.venue.findMany).toHaveBeenCalledWith({
+        where: {},
+        skip: 0,
+        take: 10,
+        orderBy: { createdAt: 'desc' },
+      });
+      expect(mockPrismaService.venue.count).toHaveBeenCalledWith({
         where: {},
       });
       expect(mockLoggerService.log).toHaveBeenCalled();
@@ -91,12 +107,16 @@ describe('VenuesService', () => {
       ];
 
       mockPrismaService.venue.findMany.mockResolvedValue(mockVenues);
+      mockPrismaService.venue.count.mockResolvedValue(1);
 
       const result = await service.findAll({ city: 'Denver' });
 
-      expect(result).toEqual(mockVenues);
+      expect(result.data).toEqual(mockVenues);
       expect(mockPrismaService.venue.findMany).toHaveBeenCalledWith({
         where: { city: 'Denver' },
+        skip: 0,
+        take: 10,
+        orderBy: { createdAt: 'desc' },
       });
     });
 
@@ -118,12 +138,16 @@ describe('VenuesService', () => {
       ];
 
       mockPrismaService.venue.findMany.mockResolvedValue(mockVenues);
+      mockPrismaService.venue.count.mockResolvedValue(1);
 
       const result = await service.findAll({ minCapacity: 75 });
 
-      expect(result).toEqual(mockVenues);
+      expect(result.data).toEqual(mockVenues);
       expect(mockPrismaService.venue.findMany).toHaveBeenCalledWith({
         where: { capacity: { gte: 75 } },
+        skip: 0,
+        take: 10,
+        orderBy: { createdAt: 'desc' },
       });
     });
 
@@ -145,12 +169,16 @@ describe('VenuesService', () => {
       ];
 
       mockPrismaService.venue.findMany.mockResolvedValue(mockVenues);
+      mockPrismaService.venue.count.mockResolvedValue(1);
 
       const result = await service.findAll({ maxPrice: 3000 });
 
-      expect(result).toEqual(mockVenues);
+      expect(result.data).toEqual(mockVenues);
       expect(mockPrismaService.venue.findMany).toHaveBeenCalledWith({
         where: { pricePerNight: { lte: 3000 } },
+        skip: 0,
+        take: 10,
+        orderBy: { createdAt: 'desc' },
       });
     });
 
@@ -158,6 +186,7 @@ describe('VenuesService', () => {
       const mockVenues = [];
 
       mockPrismaService.venue.findMany.mockResolvedValue(mockVenues);
+      mockPrismaService.venue.count.mockResolvedValue(0);
 
       const result = await service.findAll({
         city: 'Denver',
@@ -165,13 +194,55 @@ describe('VenuesService', () => {
         maxPrice: 4000,
       });
 
-      expect(result).toEqual(mockVenues);
+      expect(result.data).toEqual(mockVenues);
       expect(mockPrismaService.venue.findMany).toHaveBeenCalledWith({
         where: {
           city: 'Denver',
           capacity: { gte: 50 },
           pricePerNight: { lte: 4000 },
         },
+        skip: 0,
+        take: 10,
+        orderBy: { createdAt: 'desc' },
+      });
+    });
+
+    it('should handle pagination correctly', async () => {
+      const mockVenues = [
+        {
+          id: '1',
+          name: 'Test Venue',
+          city: 'Denver',
+          country: 'USA',
+          address: '123 Test St',
+          capacity: 50,
+          pricePerNight: 3000,
+          description: 'Test description',
+          amenities: ['WiFi'],
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      ];
+
+      mockPrismaService.venue.findMany.mockResolvedValue(mockVenues);
+      mockPrismaService.venue.count.mockResolvedValue(25);
+
+      const result = await service.findAll({ page: 2, limit: 10 });
+
+      expect(result.data).toEqual(mockVenues);
+      expect(result.meta).toEqual({
+        page: 2,
+        limit: 10,
+        total: 25,
+        totalPages: 3,
+        hasNextPage: true,
+        hasPreviousPage: true,
+      });
+      expect(mockPrismaService.venue.findMany).toHaveBeenCalledWith({
+        where: {},
+        skip: 10,
+        take: 10,
+        orderBy: { createdAt: 'desc' },
       });
     });
   });

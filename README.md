@@ -54,7 +54,7 @@ docker-compose up
 - **Custom logger:** Simple structured logging sufficient for scope
 - **Optimistic locking:** Prevents double bookings using version field and transaction-based conflict detection
 - **No authentication:** Simplified scope for demo, would add JWT/OAuth in production
-- **No pagination:** Works for demo with limited venues, would add cursor-based pagination for scale
+- **Pagination:** Implemented offset-based pagination with page/limit parameters
 - **No caching:** Direct DB queries, would add Redis for production performance
 
 **Double Booking Prevention:**
@@ -62,7 +62,7 @@ Implemented optimistic locking with transaction-based conflict checking. Checks 
 
 ## Improvements With More Time
 
-**Backend:** Authentication (JWT), pagination, rate limiting, email service, API versioning
+**Backend:** Authentication (JWT), rate limiting, email service, API versioning
 
 **Caching:** Redis for query result caching, cache invalidation strategies, distributed caching for multi-instance deployments
 
