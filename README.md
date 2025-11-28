@@ -87,7 +87,27 @@ Query params: `city`, `minCapacity`, `maxPrice`
 
 **Frontend:** Date picker, image gallery, map integration, real-time validation, accessibility, component tests
 
-**DevOps & CI/CD:** GitHub Actions pipeline, automated testing/deployment, test coverage reporting, security scanning
+**Environment Management:**
+- Multiple environments (dev, staging, production) with separate configs
+- Environment-specific database instances
+- Feature flags per environment
+- Environment-based feature toggles
+
+**Configuration & Secrets Management:**
+- HashiCorp Vault for secure secrets storage
+- Dynamic configuration updates without redeployment
+- Secret rotation policies
+- Environment-specific secrets (API keys, DB credentials, JWT secrets)
+- Integration with CI/CD for automated secret injection
+
+**Feature Flags:**
+- Flipper or LaunchDarkly for feature toggling
+- A/B testing capabilities
+- Gradual feature rollouts
+- Kill switches for problematic features
+- User/tenant-based feature flags
+
+**DevOps & CI/CD:** GitHub Actions pipeline, automated testing/deployment, test coverage reporting, security scanning, multi-environment deployments
 
 **Monitoring:** APM (New Relic/Datadog), error tracking (Sentry), metrics (Prometheus/Grafana), uptime monitoring, performance tracking
 
