@@ -60,3 +60,14 @@ export async function createBookingInquiry(inquiry: BookingInquiry) {
   return response.json();
 }
 
+export async function getVenueCities(): Promise<string[]> {
+  const response = await fetch(`${API_URL}/venues/cities`, { cache: 'no-store' });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch cities');
+  }
+
+  const data = await response.json();
+  return Array.isArray(data) ? data : [];
+}
+

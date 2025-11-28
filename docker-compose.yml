@@ -9,7 +9,7 @@ services:
       POSTGRES_PASSWORD: retreat123
       POSTGRES_DB: retreat_db
     ports:
-      - '5433:5432'
+      - '5543:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
@@ -17,7 +17,6 @@ services:
     build: ./backend
     volumes:
       - ./backend:/app
-      - /app/node_modules
     environment:
       - DATABASE_URL=postgresql://retreat:retreat123@postgres:5432/retreat_db?schema=public
     ports:

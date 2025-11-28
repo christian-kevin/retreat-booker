@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common';
+import type { Prisma } from '@prisma/client';
 import { PrismaService } from '@/shared/prisma/prisma.service';
 
 export class BookingInquiriesRepositoryTx {
-  constructor(private readonly tx: any) {}
+  constructor(private readonly tx: Prisma.TransactionClient) {}
 
   findOverlappingBooking(
     venueId: string,
@@ -34,7 +35,7 @@ export class BookingInquiriesRepository {
   runInTransaction<T>(
     handler: (repo: BookingInquiriesRepositoryTx) => Promise<T>,
   ) {
-    return this.prisma.$transaction((tx) =>
+    return this.prisma.$transaction((tx: Prisma.TransactionClient) =>
       handler(new BookingInquiriesRepositoryTx(tx)),
     );
   }

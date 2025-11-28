@@ -63,6 +63,7 @@ See `DEPLOYMENT.md` for detailed deployment instructions.
 - **No authentication:** Simplified scope for demo, would add JWT/OAuth in production
 - **Pagination:** Implemented offset-based pagination with page/limit parameters
 - **No caching:** Direct DB queries, would add Redis for production performance
+- **Fixed city filters:** Frontend city picker is populated from the database to keep queries consistent; future work could add Elasticsearch for fuzzy text search across broader location metadata.
 
 **Double Booking Prevention:**
 Implemented optimistic locking with transaction-based conflict checking. Checks for overlapping date ranges within a database transaction to prevent race conditions.

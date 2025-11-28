@@ -42,5 +42,16 @@ export class VenuesController {
   findAll(@Query() query: VenuesQueryDto) {
     return this.venuesService.findAll(query);
   }
+
+  @Get('cities')
+  @ApiOperation({ summary: 'Get distinct list of venue cities' })
+  @ApiResponse({
+    status: 200,
+    description: 'List of cities that currently have venues',
+    type: [String],
+  })
+  findCities() {
+    return this.venuesService.getCities();
+  }
 }
 

@@ -49,5 +49,11 @@ export class VenuesService {
       },
     };
   }
+
+  async getCities() {
+    this.logger.log('Fetching distinct venue cities', 'VenuesService');
+    const records = await this.venuesRepository.findDistinctCities();
+    return records.map(({ city }) => city).filter(Boolean);
+  }
 }
 

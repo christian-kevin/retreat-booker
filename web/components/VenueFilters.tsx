@@ -1,10 +1,34 @@
 'use client';
 
+import { useEffect, useState } from 'react';
+import { getVenueCities } from '@/lib/api';
+
 interface VenueFiltersProps {
   onFilterChange: (filters: { city?: string; minCapacity?: number; maxPrice?: number }) => void;
 }
 
 export default function VenueFilters({ onFilterChange }: VenueFiltersProps) {
+  const [cities, setCities] = useState<string[]>([]);
+  const [citiesError, setCitiesError] = useState<string | null>(null);
+  const [loadingCities, setLoadingCities] = useState(false);
+
+  useEffect(() => {
+    const fetchCities = async () => {
+      try {
+        setLoadingCities(true);
+        setCitiesError(null);
+        const cityList = await getVenueCities();
+        setCities(cityList);
+      } catch (err) {
+        setCitiesError('Unable to load cities');
+      } finally {
+        setLoadingCities(false);
+      }
+    };
+
+    fetchCities();
+  }, []);
+
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
@@ -31,13 +55,21 @@ export default function VenueFilters({ onFilterChange }: VenueFiltersProps) {
           <label htmlFor="city" className="block text-sm font-medium text-gray-700 mb-1">
             City
           </label>
-          <input
-            type="text"
+          <select
             name="city"
             id="city"
-            placeholder="e.g. Denver"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+            defaultValue=""
+            disabled={loadingCities || !!citiesError}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+          >
+            <option value="">All cities</option>
+            {cities.map((city) => (
+              <option key={city} value={city}>
+                {city}
+              </option>
+            ))}
+          </select>
+          {citiesError && <p className="text-sm text-red-600 mt-1">{citiesError}</p>}
         </div>
         <div>
           <label htmlFor="minCapacity" className="block text-sm font-medium text-gray-700 mb-1">

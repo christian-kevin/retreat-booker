@@ -17,5 +17,13 @@ export class VenuesRepository {
   count(where: Record<string, any>) {
     return this.prisma.venue.count({ where });
   }
+
+  findDistinctCities() {
+    return this.prisma.venue.findMany({
+      distinct: ['city'],
+      select: { city: true },
+      orderBy: { city: 'asc' },
+    });
+  }
 }
 
