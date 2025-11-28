@@ -62,7 +62,7 @@ Implemented optimistic locking with transaction-based conflict checking. Checks 
 
 ## Improvements With More Time
 
-**Backend:** Authentication (JWT), rate limiting, email service, API versioning
+**Backend:** Authentication (JWT), rate limiting, email service, API versioning, i18n for error message translations
 
 **Caching:** Redis for query result caching, cache invalidation strategies, distributed caching for multi-instance deployments
 
