@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { getVenues, Venue } from '@/lib/api';
 import BookingForm from '@/components/BookingForm';
@@ -16,8 +16,8 @@ export default function VenuePage() {
     const fetchVenue = async () => {
       try {
         setLoading(true);
-        const venues = await getVenues();
-        const found = venues.find((v) => v.id === params.id);
+        const response = await getVenues();
+        const found = response.data.find((v: Venue) => v.id === params.id);
         
         if (found) {
           setVenue(found);
