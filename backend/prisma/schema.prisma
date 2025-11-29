@@ -15,32 +15,34 @@ model Venue {
   country         String
   address         String
   capacity        Int
-  pricePerNight   Int
+  pricePerNight   Int               @map("price_per_night")
   description     String
   amenities       String[]
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
+  createdAt       DateTime          @default(now()) @map("created_at")
+  updatedAt       DateTime          @updatedAt @map("updated_at")
   bookingInquiries BookingInquiry[]
 
   @@index([city])
   @@index([capacity])
   @@index([pricePerNight])
+  @@map("venue")
 }
 
 model BookingInquiry {
   id            String   @id @default(uuid())
-  venueId       String
-  venue         Venue    @relation(fields: [venueId], references: [id])
-  companyName   String
-  email         String
-  startDate     DateTime
-  endDate       DateTime
-  attendeeCount Int
-  version       Int      @default(0)
-  createdAt     DateTime @default(now())
+  venueId      String   @map("venue_id")
+  venue        Venue    @relation(fields: [venueId], references: [id])
+  companyName  String   @map("company_name")
+  email        String
+  startDate    DateTime @map("start_date")
+  endDate      DateTime @map("end_date")
+  attendeeCount Int     @map("attendee_count")
+  version      Int      @default(0)
+  createdAt    DateTime @default(now()) @map("created_at")
 
   @@index([venueId])
   @@index([email])
   @@index([venueId, startDate, endDate])
+  @@map("booking_inquiry")
 }
 
