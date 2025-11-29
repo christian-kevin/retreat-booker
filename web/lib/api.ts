@@ -25,13 +25,29 @@ export interface VenueFilters {
   city?: string;
   minCapacity?: number;
   maxPrice?: number;
+  page?: number;
+  limit?: number;
 }
 
-export async function getVenues(filters?: VenueFilters): Promise<Venue[]> {
+export interface VenuesResponse {
+  data: Venue[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+  };
+}
+
+export async function getVenues(filters?: VenueFilters): Promise<VenuesResponse> {
   const params = new URLSearchParams();
   if (filters?.city) params.append('city', filters.city);
   if (filters?.minCapacity) params.append('minCapacity', filters.minCapacity.toString());
   if (filters?.maxPrice) params.append('maxPrice', filters.maxPrice.toString());
+  if (filters?.page) params.append('page', filters.page.toString());
+  if (filters?.limit) params.append('limit', filters.limit.toString());
 
   const url = `${API_URL}/venues${params.toString() ? `?${params.toString()}` : ''}`;
   
@@ -52,7 +68,7 @@ export async function getVenues(filters?: VenueFilters): Promise<Venue[]> {
     
     const result = await response.json();
     // Backend returns { data: Venue[], meta: {...} }
-    return result.data || result;
+    return result;
   } catch (error) {
     if (error instanceof Error && error.name === 'AbortError') {
       throw new Error('Request timeout: Backend may not be ready yet');
